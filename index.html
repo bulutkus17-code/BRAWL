@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Brawl Hesap Kurtar - Demo (Güncel)</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --muted:#9aa4b2;
+    --accent:#ffd400; /* sarı buton */
+    --accent-dark:#ffb400;
+    --success:#3ddc84;
+  }
+  *{box-sizing:border-box;font-family:Inter,Segoe UI,Arial,sans-serif}
+  body{margin:0;background:linear-gradient(180deg,#071028 0%, #0f1b2a 100%);color:#e6eef6;display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
+  .card{width:460px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:22px;box-shadow:0 10px 30px rgba(2,6,23,0.7)}
+  h1{margin:0 0 12px 0;font-size:20px;letter-spacing:0.3px}
+  label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+  input[type="text"], input[type="email"], select{
+    width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:inherit;font-size:14px;margin-top:6px;
+  }
+  .btn{
+    margin-top:18px;width:100%;padding:12px;border-radius:10px;border:0;font-weight:700;font-size:15px;cursor:pointer;
+    background:var(--accent);color:#071022;box-shadow:0 6px 18px rgba(255,212,0,0.12);
+  }
+  .btn.secondary{background:#2d3748;color:#e6eef6;box-shadow:none}
+  .btn:active{transform:translateY(1px)}
+  .progress-wrap{margin-top:16px;display:none;flex-direction:column;gap:8px}
+  .progress{height:12px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 120ms linear}
+  .percent{font-size:13px;color:var(--muted);text-align:right}
+  .message{margin-top:10px;font-size:14px;color:#cfe;display:none}
+  .verify-box{margin-top:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);display:none}
+  .verify-row{display:flex;gap:8px;align-items:center}
+  .verify-row input{flex:1}
+  .tick{display:flex;align-items:center;gap:8px;margin-top:12px;color:var(--success);font-weight:700}
+  .small{font-size:12px;color:var(--muted);margin-top:8px}
+  .disabled{opacity:0.6;pointer-events:none}
+  .center{display:flex;align-items:center;justify-content:center}
+  .issue-box{margin-top:14px;padding:12px;border-radius:8px;background:rgba(0,0,0,0.25);display:none}
+  .options{margin-top:8px}
+  .final-success{margin-top:14px;padding:12px;border-radius:8px;background:rgba(61,220,132,0.12);color:var(--success);font-weight:700;display:none}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  /* tick icon */
+  .tick svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}
+</style>
+</head>
+<body>
+
+<div class="card" role="main" aria-labelledby="title">
+  <h1 id="title">Brawl Hesap Kurtar</h1>
+
+  <label for="brawlName">Brawl Stars ismini gir</label>
+  <input id="brawlName" type="text" placeholder="OyuncuAdı123">
+
+  <label for="gmail">Gmail gir</label>
+  <input id="gmail" type="email" placeholder="ornek@gmail.com">
+
+  <label for="platform">Platform / Emulator seç</label>
+  <select id="platform">
+    <option value="">Seçiniz...</option>
+    <option value="android">Android</option>
+    <option value="ios">iOS</option>
+    <option value="emulator">Emulator</option>
+  </select>
+
+  <button id="startBtn" class="btn">Hesap kurtar</button>
+
+  <div class="progress-wrap" id="progressWrap" aria-hidden="true">
+    <div class="progress"><i id="bar"></i></div>
+    <div class="percent" id="percent">0%</div>
+    <div class="message" id="statusMsg"></div>
+  </div>
+
+  <div class="verify-box" id="verifyBox" aria-hidden="true">
+    <div id="foundMsg" style="font-weight:700;margin-bottom:8px;color:#dff">Kullanıcı bulundu. Bot doğrulaması gerekli.</div>
+
+    <div class="verify-row">
+      <div id="question" style="font-weight:700"></div>
+      <input id="answer" type="text" placeholder="Cevabını yaz">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="checkBtn" class="btn" style="flex:1;background:#0ea5ff;color:#022">Doğrula</button>
+      <button id="newQ" class="btn secondary" style="flex:0 0 110px;">Yeni soru</button>
+    </div>
+  </div>
+
+  <div class="tick" id="finalTick" style="display:none">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+    <div>✔ Doğrulandı</div>
+  </div>
+
+  <!-- Yeni: Hesabınıza ne oldu? butonu ve seçenekler -->
+  <div style="margin-top:12px">
+    <button id="issueBtn" class="btn secondary" style="display:none;">Hesabınıza ne oldu?</button>
+  </div>
+
+  <div class="issue-box" id="issueBox">
+    <div style="font-weight:700">Lütfen bir seçenek seçin:</div>
+    <div class="options">
+      <label><input type="radio" name="issue" value="baskasi"> Hesabıma başka birisi giriyor</label><br>
+      <label><input type="radio" name="issue" value="virus"> Hesabıma virüs girdi</label><br>
+      <label><input type="radio" name="issue" value="ulasamiyorum"> Hesabıma ulaşamıyorum</label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="confirmIssue" class="btn" style="flex:1;background:var(--accent);color:#071022">Onayla</button>
+      <button id="cancelIssue" class="btn secondary" style="flex:0 0 110px">İptal</button>
+    </div>
+  </div>
+
+  <div class="final-success" id="finalSuccess">Hesap kurtarıldı</div>
+</div>
+
+<script>
+  // Basit, yerelde çalışan demo. Hiçbir bilgi dışarı gönderilmez.
+  const startBtn = document.getElementById('startBtn');
+  const bar = document.getElementById('bar');
+  const percent = document.getElementById('percent');
+  const progressWrap = document.getElementById('progressWrap');
+  const statusMsg = document.getElementById('statusMsg');
+  const verifyBox = document.getElementById('verifyBox');
+  const questionEl = document.getElementById('question');
+  const answerEl = document.getElementById('answer');
+  const checkBtn = document.getElementById('checkBtn');
+  const newQBtn = document.getElementById('newQ');
+  const finalTick = document.getElementById('finalTick');
+  const issueBtn = document.getElementById('issueBtn');
+  const issueBox = document.getElementById('issueBox');
+  const confirmIssue = document.getElementById('confirmIssue');
+  const cancelIssue = document.getElementById('cancelIssue');
+  const finalSuccess = document.getElementById('finalSuccess');
+
+  let currentProgressInterval = null;
+  let expectedAnswer = null;
+
+  function setDisabled(state){
+    document.getElementById('brawlName').disabled = state;
+    document.getElementById('gmail').disabled = state;
+    document.getElementById('platform').disabled = state;
+    startBtn.classList.toggle('disabled', state);
+  }
+
+  function startProgress(onComplete){
+    clearInterval(currentProgressInterval);
+    progressWrap.style.display = 'flex';
+    let p = 1;
+    bar.style.width = p + '%';
+    percent.textContent = p + '%';
+    statusMsg.style.display = 'block';
+    statusMsg.textContent = 'Aranıyor...';
+    setDisabled(true);
+
+    currentProgressInterval = setInterval(()=>{
+      p += Math.ceil(Math.random()*4);
+      if(p > 99) p = 100;
+      bar.style.width = p + '%';
+      percent.textContent = p + '%';
+      if(p >= 100){
+        clearInterval(currentProgressInterval);
+        statusMsg.textContent = '';
+        if(typeof onComplete === 'function') setTimeout(onComplete, 400);
+      }
+    }, 120);
+  }
+
+  function startSecondProgress(onComplete){
+    // Aynı görünüm ama farklı mesaj
+    clearInterval(currentProgressInterval);
+    progressWrap.style.display = 'flex';
+    let p = 1;
+    bar.style.width = p + '%';
+    percent.textContent = p + '%';
+    statusMsg.style.display = 'block';
+    statusMsg.textContent = 'Onaylandı, işlem yapılıyor...';
+    setDisabled(true);
+
+    currentProgressInterval = setInterval(()=>{
+      // yavaş ilerleme, biraz daha gerçekçi
+      p += Math.ceil(Math.random()*3);
+      if(p > 99) p = 100;
+      bar.style.width = p + '%';
+      percent.textContent = p + '%';
+      if(p >= 100){
+        clearInterval(currentProgressInterval);
+        statusMsg.textContent = '';
+        if(typeof onComplete === 'function') setTimeout(onComplete, 500);
+      }
+    }, 140);
+  }
+
+  function showFound(){
+    statusMsg.style.display = 'none';
+    verifyBox.style.display = 'block';
+    finalTick.style.display = 'none';
+    issueBtn.style.display = 'none';
+    issueBox.style.display = 'none';
+    finalSuccess.style.display = 'none';
+    generateQuestion();
+  }
+
+  function generateQuestion(){
+    answerEl.value = '';
+    const type = Math.random() < 0.5 ? 'mul' : 'div';
+    if(type === 'mul'){
+      const a = Math.floor(Math.random()*9)+2;
+      const b = Math.floor(Math.random()*9)+2;
+      expectedAnswer = a * b;
+      questionEl.textContent = `${a} × ${b} = ?`;
+    } else {
+      const a = Math.floor(Math.random()*9)+2;
+      const b = Math.floor(Math.random()*9)+2;
+      expectedAnswer = b;
+      const dividend = a * b;
+      questionEl.textContent = `${dividend} ÷ ${a} = ?`;
+    }
+    answerEl.focus();
+  }
+
+  startBtn.addEventListener('click', ()=>{
+    const name = document.getElementById('brawlName').value.trim();
+    const mail = document.getElementById('gmail').value.trim();
+    const platform = document.getElementById('platform').value;
+
+    if(!name || !mail || !platform){
+      alert('Lütfen tüm alanları doldurun (bu bir demo).');
+      return;
+    }
+
+    verifyBox.style.display = 'none';
+    finalTick.style.display = 'none';
+    issueBtn.style.display = 'none';
+    issueBox.style.display = 'none';
+    finalSuccess.style.display = 'none';
+    startProgress(showFound);
+  });
+
+  checkBtn.addEventListener('click', ()=>{
+    const ans = answerEl.value.trim();
+    if(ans === '') { alert('Cevabı gir.'); return; }
+    const numeric = Number(ans.replace(',', '.'));
+    if(!Number.isFinite(numeric)){
+      alert('Lütfen sayısal cevap gir.');
+      return;
+    }
+    if(Math.abs(numeric - expectedAnswer) > 1e-6){
+      alert('Yanlış cevap. Yeni soru deneyebilirsin.');
+      return;
+    }
+    // doğruysa ikinci aşama: doğrulandı göster ve Hesabınıza ne oldu? butonunu aç
+    progressWrap.style.display = 'none';
+    verifyBox.style.display = 'none';
+    finalTick.style.display = 'flex';
+    issueBtn.style.display = 'block';
+    setDisabled(false);
+  });
+
+  newQBtn.addEventListener('click', generateQuestion);
+
+  // Issue button açar
+  issueBtn.addEventListener('click', ()=>{
+    issueBox.style.display = 'block';
+    issueBox.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+
+  cancelIssue.addEventListener('click', ()=>{
+    issueBox.style.display = 'none';
+  });
+
+  confirmIssue.addEventListener('click', ()=>{
+    // seçili bir seçenek var mı kontrol et
+    const sel = document.querySelector('input[name="issue"]:checked');
+    if(!sel){ alert('Lütfen bir seçenek seçin.'); return; }
+    // Başlat: tekrar 100'e kadar
+    issueBox.style.display = 'none';
+    finalTick.style.display = 'none';
+    finalSuccess.style.display = 'none';
+    startSecondProgress(()=>{
+      progressWrap.style.display = 'none';
+      finalSuccess.style.display = 'block';
+      // küçük not
+      finalSuccess.scrollIntoView({behavior:'smooth', block:'center'});
+      setDisabled(false);
+      issueBtn.style.display = 'none';
+    });
+  });
+
+  // klavye ile hızlı gönderme
+  answerEl.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') checkBtn.click();
+  });
+</script>
+</body>
+</html>
